@@ -1,0 +1,57 @@
+{
+  "name": "hilda-ui",
+  "version": "1.0.0",
+  "description": "Hilda — Dynamic Island desktop voice assistant",
+  "author": "Hilda",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:backend": "cd .. && pip install -r requirements.txt && python -m PyInstaller --noconfirm --clean hilda-engine.spec",
+    "build:website": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win nsis --publish never",
+    "build:folder": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win dir --publish never",
+    "build:full": "npm run build:backend && npm run build:website"
+  },
+  "build": {
+    "appId": "com.hilda.assistant",
+    "productName": "Hilda",
+    "artifactName": "Hilda-Setup.${ext}",
+    "icon": "build/icon.ico",
+    "directories": {
+      "output": "../website/downloads"
+    },
+    "extraResources": [
+      {
+        "from": "../dist/hilda-engine",
+        "to": "backend",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../.env.example",
+        "to": "defaults"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false,
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "shortcutName": "Hilda"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*"
+    ]
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "@dicebear/collection": "^9.4.0",
+    "@dicebear/core": "^9.4.0"
+  }
+}

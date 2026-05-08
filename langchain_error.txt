@@ -1,0 +1,6 @@
+Python Version: 3.13.7 (tags/v3.13.7:bcee1c3, Aug 14 2025, 14:15:11) [MSC v.1944 64 bit (AMD64)]
+FAILED TO IMPORT AgentExecutor:
+Traceback (most recent call last):
+  File "C:\Users\sarko\OneDrive\Documentos\emilio ai\test_langchain.py", line 7, in <module>
+    from langchain.agents import AgentExecutor
+ImportError: cannot import name 'AgentExecutor' from 'langchain.agents' (C:\Users\sarko\AppData\Roaming\Python\Python313\site-packages\langchain\agents\__init__.py)

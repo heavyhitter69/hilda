@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hilda — Setup</title>
+  <link rel="icon" href="hilda-ai.png" type="image/png" />
+  <link rel="stylesheet" href="setup.css" />
+</head>
+<body>
+  <div class="setup-root">
+    <h1>Hilda setup</h1>
+
+
+    <div id="steps" class="steps"></div>
+    <div id="status-line"></div>
+
+    <section id="step-welcome" class="step card">
+      <h2>Welcome</h2>
+      <p>Hilda will greet you by name after you say your wake phrase (see below).</p>
+      <label class="field-label" for="user-display-name">What should Hilda call you?</label>
+      <input type="text" id="user-display-name" class="text-input" placeholder="Your first name" maxlength="40" autocomplete="given-name" />
+      <p class="wake-note">
+        <strong>Next steps:</strong> you will record short lines (wake phrases + sounds that cover English letters).
+        That teaches Whisper how <em>you</em> say “Hilda” and common words — similar in spirit to Siri’s voice setup, without uploading audio anywhere.
+      </p>
+      <p class="last muted-tip">Tip: finish this window with the backend running so voice steps work.</p>
+    </section>
+
+    <section id="step-terms" class="step card hidden">
+      <h2>Agreement</h2>
+      <textarea class="termsbox" readonly>
+Hilda can control apps, folders, and run shell snippets you ask for. Preview builds are EXPERIMENTAL SOFTWARE: use at your own risk.
+
+No warranty — you are responsible for commands you authorize. Privacy: enrollment and commands are processed on your PC (Whisper/pyttsx3) except when you enable optional cloud APIs in .env.
+
+By accepting, you understand Hilda requires microphone access while listening and may open files or URLs you request.
+</textarea>
+      <label class="row">
+        <input type="checkbox" id="accept-terms" />
+        <span>I understand and agree to continue.</span>
+      </label>
+    </section>
+
+    <section id="step-permissions" class="step card hidden">
+      <h2>Permissions</h2>
+      <div class="badge-warn">Windows cannot grant the mic from inside Electron — only you can.</div>
+      <p>Hilda listens for “Hey Hilda” (and similar) using your microphone. Allow access here.</p>
+      <button type="button" class="btn" id="open-mic">Open microphone privacy settings</button>
+      <span id="path-feedback" style="display:none;"></span>
+    </section>
+
+    <section id="step-enrollment" class="step card hidden">
+      <h2>Voice enrollment</h2>
+      <p>
+        Like a phone assistant’s setup: say the wake lines (“Hey Hilda”, etc.), then a few short readings that cover
+        English sounds so speech recognition can follow your accent — no external keyword files or account signup.
+      </p>
+      <div id="enrollment-list" class="enrollment-list"></div>
+      <p id="enrollment-status" class="muted-tip"></p>
+    </section>
+
+    <section id="step-voices" class="step card hidden" style="padding: 0; overflow: hidden; background: transparent; border: none;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 id="carousel-title" style="font-size: 2.5rem; font-weight: 400; margin-bottom: 6px;">Choose a Voice</h2>
+        <p id="carousel-desc" style="color: var(--text); font-size: 0.95rem; margin: 0;">Listen through your speakers</p>
+      </div>
+      
+      <div class="carousel-container">
+        <button id="btn-prev-voice" class="carousel-arrow left">‹</button>
+        <div id="carousel-track" class="carousel-track">
+          <!-- Voice cards will be injected here -->
+        </div>
+        <button id="btn-next-voice" class="carousel-arrow right">›</button>
+      </div>
+
+      <div class="carousel-dots" id="carousel-dots"></div>
+
+      <div style="text-align: center; margin-top: 24px; margin-bottom: 12px;">
+        <button type="button" class="btn primary" id="btn-preview-voice" style="padding: 12px 32px; border-radius: 24px; font-size: 1.1rem; background: #1c2333; border: 1px solid rgba(255,255,255,0.1);">Start</button>
+      </div>
+    </section>
+
+    <section id="step-practice" class="step card hidden">
+      <h2>Wake-word rehearsal</h2>
+      <p id="wake-hint-practice"></p>
+      <div id="practice-prompts"></div>
+      <button type="button" class="btn" id="btn-record-mic">Record my attempt</button>
+      <p style="margin-top:10px;">Whisper hears what was said:</p>
+      <div id="practice-log" class="log-box">—</div>
+    </section>
+
+    <section id="step-done" class="step card hidden">
+      <h2>You are set</h2>
+      <p class="last">The floating island opens next. Expand it to type commands, or trigger the wake flow from Python.</p>
+    </section>
+
+    <div class="nav">
+      <button type="button" class="btn danger-outline" id="btn-quit-decline">Decline & quit</button>
+      <span style="flex:1;"></span>
+      <button type="button" class="btn" id="btn-back">Back</button>
+      <button type="button" class="btn primary" id="btn-next">Next</button>
+    </div>
+    <button type="button" class="btn link hidden" id="btn-skip" style="display:none;">Skip setup</button>
+  </div>
+  <script src="setup_renderer.js"></script>
+</body>
+</html>

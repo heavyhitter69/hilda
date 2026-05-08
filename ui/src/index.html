@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hilda</title>
+  <link rel="icon" href="hilda-ai.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Dynamic Island Container ─────────────────────────────────────── -->
+  <div id="island" class="island idle">
+
+    <!-- Pill bar (always visible) -->
+    <div id="pill" class="pill" draggable="false">
+
+      <!-- Left: Avatar + state dot -->
+      <div class="pill-left">
+        <div id="avatar" class="avatar">
+          <img id="avatar-img" class="avatar-letter" alt="Avatar" />
+          <span id="state-dot" class="state-dot"></span>
+        </div>
+      </div>
+
+      <!-- Centre: Waveform or status text -->
+      <div class="pill-centre">
+        <canvas id="waveform" width="160" height="28"></canvas>
+        <span id="status-text" class="status-text">Hilda</span>
+      </div>
+
+      <!-- Right: Expand toggle -->
+      <div class="pill-right">
+        <button id="toggle-btn" class="icon-btn" title="Expand / Collapse" onclick="window.__toggleExpand()">
+          <svg id="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Expanded panel -->
+    <div id="panel" class="panel">
+      <div id="chat-log" class="chat-log"></div>
+
+      <div class="input-row">
+        <input
+          id="chat-input"
+          class="chat-input"
+          type="text"
+          placeholder="Type a command…"
+          autocomplete="off"
+          maxlength="500"
+        />
+        <button id="send-btn" class="send-btn" onclick="window.__sendCommand()">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /island -->
+
+  <script src="renderer.js"></script>
+</body>
+</html>
