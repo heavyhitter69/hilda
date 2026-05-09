@@ -45,6 +45,10 @@ jobs:
         working-directory: ./ui
         run: npm install
 
+      - name: Resize App Icon
+        run: |
+          python -c "from PIL import Image; import os; os.makedirs('ui/build', exist_ok=True); img = Image.open('hilda-ai.png'); img.resize((512, 512), Image.Resampling.LANCZOS).save('ui/build/icon.png')"
+
       - name: Build Python Backend
         working-directory: ./ui
         run: npm run build:backend
