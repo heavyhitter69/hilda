@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hilda — Personal assistant for your PC</title>
-  <meta name="description" content="Hilda is a personal assistant for Windows—fast actions, optional AI, and a calm presence on your desktop." />
+  <meta name="description" content="Hilda is a personal assistant for Windows, macOS, and Linux—fast actions, optional AI, and a calm presence on your desktop." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet" />
@@ -31,13 +31,13 @@
 
   <main>
     <section class="hero">
-      <p class="eyebrow">Personal assistant · Windows</p>
+      <p class="eyebrow">Personal assistant · Windows, macOS, & Linux</p>
       <h1>Use Hilda everywhere you work</h1>
       <p class="lede">
-        Talk or type—get things done on your PC with a single, calm companion at the edge of your screen.
+        Talk or type—get things done on your computer with a single, calm companion at the edge of your screen.
       </p>
       <div class="cta-row">
-        <a class="btn primary dl-win" href="downloads/Hilda-Setup.exe" id="download-main">
+        <a class="btn primary dl-main" href="downloads/Hilda-Setup.exe" id="download-main">
           Download for Windows
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M12 5v14M5 12l7 7 7-7" />
@@ -133,7 +133,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>© 2026 Hilda · Personal assistant for Windows</span>
+        <span>© 2026 Hilda · Personal assistant for Windows, macOS, and Linux</span>
         <span>Made for focus, not noise.</span>
       </div>
     </div>
@@ -144,9 +144,27 @@
     (function () {
       var msg = document.getElementById("download-status");
       var missing = "Installer not included on this host — build from source if you have the repo.";
-      window.hildaInstaller.bindDownloadAnchors(".dl-win", "downloads/Hilda-Setup.exe", missing);
+      var os = window.hildaInstaller.detectOS();
 
-      window.hildaInstaller.check("downloads/Hilda-Setup.exe").then(function (ok) {
+      var downloadPath = "downloads/Hilda-Setup.exe";
+      var downloadText = "Download for Windows";
+
+      if (os === 'Mac') {
+          downloadPath = "downloads/Hilda-Setup.dmg";
+          downloadText = "Download for macOS";
+      } else if (os === 'Linux') {
+          downloadPath = "downloads/Hilda-Setup.AppImage";
+          downloadText = "Download for Linux";
+      }
+
+      var mainBtn = document.getElementById("download-main");
+      if (mainBtn) {
+          mainBtn.innerHTML = downloadText + ' <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7" /></svg>';
+      }
+
+      window.hildaInstaller.bindDownloadAnchors(".dl-main", downloadPath, missing);
+
+      window.hildaInstaller.check(downloadPath).then(function (ok) {
         if (msg) {
           msg.textContent = ok ? "Ready to download." : "Download unavailable until the installer is published.";
         }
