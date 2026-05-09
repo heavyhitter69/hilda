@@ -17,15 +17,18 @@ from core.logger import get_logger
 
 log = get_logger(__name__)
 
+import webrtcvad
+
 _SAMPLE_RATE   = 16000
 _CHANNELS      = 1
-_CHUNK         = 1024
+_CHUNK         = 480  # 30ms at 16000Hz (webrtcvad needs 10, 20, or 30ms chunks)
 _SILENCE_SECS  = float(getattr(settings, "STT_SILENCE_SECS", 0.9))
 _SILENCE_THRESH = int(getattr(settings, "STT_SILENCE_THRESH", 100))
 _MAX_RECORD_SECS = int(getattr(settings, "STT_MAX_RECORD_SECS", 20))
 
 # Load model lazily
 _model: Optional[whisper.Whisper] = None
+_vad = webrtcvad.Vad(2) # 0-3 aggressiveness
 
 
 def _get_model() -> whisper.Whisper:
@@ -55,8 +58,14 @@ def record_until_silence() -> bytes:
             data, overflowed = stream.read(_CHUNK)
             data_bytes = bytes(data)
             frames.append(data_bytes)
-            amplitude = np.abs(np.frombuffer(data_bytes, dtype=np.int16)).max()
-            if amplitude < _SILENCE_THRESH:
+            try:
+                is_speech = _vad.is_speech(data_bytes, _SAMPLE_RATE)
+            except:
+                # fallback if webrtcvad fails (e.g., chunk size issue)
+                amplitude = np.abs(np.frombuffer(data_bytes, dtype=np.int16)).max()
+                is_speech = amplitude >= _SILENCE_THRESH
+
+            if not is_speech:
                 silent_chunks += 1
             else:
                 silent_chunks = 0
@@ -126,8 +135,13 @@ def record_next_utterance(
                 data, overflowed = stream.read(_CHUNK)
                 data_bytes = bytes(data)
                 waited += 1
-                amp = int(np.abs(np.frombuffer(data_bytes, dtype=np.int16)).max())
-                if amp >= st:
+                try:
+                    is_speech = _vad.is_speech(data_bytes, _SAMPLE_RATE)
+                except:
+                    amp = int(np.abs(np.frombuffer(data_bytes, dtype=np.int16)).max())
+                    is_speech = amp >= st
+
+                if is_speech:
                     loud_run += 1
                     if loud_run >= speech_chunks_needed:
                         frames.append(data_bytes)
@@ -153,8 +167,13 @@ def record_next_utterance(
                 data, overflowed = stream.read(_CHUNK)
                 data_bytes = bytes(data)
                 frames.append(data_bytes)
-                amp = int(np.abs(np.frombuffer(data_bytes, dtype=np.int16)).max())
-                if amp < st:
+                try:
+                    is_speech = _vad.is_speech(data_bytes, _SAMPLE_RATE)
+                except:
+                    amp = int(np.abs(np.frombuffer(data_bytes, dtype=np.int16)).max())
+                    is_speech = amp >= st
+
+                if not is_speech:
                     silent_chunks += 1
                     if silent_chunks >= max_silent:
                         break

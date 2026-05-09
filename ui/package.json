@@ -10,13 +10,15 @@
     "build:backend": "cd .. && pip install -r requirements.txt && python -m PyInstaller --noconfirm --clean hilda-engine.spec",
     "build:website": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win nsis --publish never",
     "build:folder": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win dir --publish never",
-    "build:full": "npm run build:backend && npm run build:website"
+    "build:mac": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --publish never",
+    "build:linux": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --linux AppImage --publish never",
+    "build:full": "npm run build:backend && npm run build:website && npm run build:mac && npm run build:linux"
   },
   "build": {
     "appId": "com.hilda.assistant",
     "productName": "Hilda",
     "artifactName": "Hilda-Setup.${ext}",
-    "icon": "build/icon.ico",
+    "icon": "build/icon.png",
     "directories": {
       "output": "../website/downloads"
     },
@@ -34,7 +36,16 @@
     "win": {
       "target": "nsis",
       "signAndEditExecutable": false,
-      "icon": "build/icon.ico"
+      "icon": "build/icon.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icon.png",
+      "category": "Utility"
     },
     "nsis": {
       "oneClick": true,
