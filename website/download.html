@@ -34,7 +34,7 @@
       <p class="eyebrow">Install</p>
       <h1>Download Hilda</h1>
       <p class="lede tight-bottom">
-        Windows today. More platforms later.
+        Available for Windows, macOS, and Linux.
       </p>
     </header>
 
@@ -47,16 +47,22 @@
           <path d="M12 5v14M5 12l7 7 7-7" />
         </svg>
       </a>
-      <a class="btn secondary stretch" href="about.html">
-        About Hilda
+      <a class="btn secondary dl-mac stretch" href="downloads/Hilda-Setup.dmg">
+        Download for macOS
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M5 12h14M12 5l7 7-7 7" />
+          <path d="M12 5v14M5 12l7 7 7-7" />
+        </svg>
+      </a>
+      <a class="btn secondary dl-linux stretch" href="downloads/Hilda-Setup.AppImage">
+        Download for Linux
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M12 5v14M5 12l7 7 7-7" />
         </svg>
       </a>
     </div>
 
     <p class="download-tagline">
-      The desktop app is available for <strong style="color: var(--text-dim); font-weight: 600">Windows</strong>. macOS and Linux are planned.
+      The desktop app is available for <strong style="color: var(--text-dim); font-weight: 600">Windows</strong>, <strong style="color: var(--text-dim); font-weight: 600">macOS</strong>, and <strong style="color: var(--text-dim); font-weight: 600">Linux</strong>.
     </p>
 
     <div class="release-block" id="downloads">
@@ -76,12 +82,12 @@
                 <span class="os-ico" aria-hidden="true">⌘</span>
                 macOS
               </div>
+              <a class="dl-row dl-mac" href="downloads/Hilda-Setup.dmg">
+                Mac (.dmg)
+                <svg class="dl-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+              </a>
               <span class="dl-row dl-row--disabled">
                 Mac (ARM64)
-                <svg class="dl-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-              </span>
-              <span class="dl-row dl-row--disabled">
-                Mac (x64)
                 <svg class="dl-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
               </span>
               <span class="dl-row dl-row--disabled">
@@ -108,6 +114,10 @@
                 <span class="os-ico" aria-hidden="true">◆</span>
                 Linux
               </div>
+              <a class="dl-row dl-linux" href="downloads/Hilda-Setup.AppImage">
+                Linux (.AppImage)
+                <svg class="dl-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+              </a>
               <span class="dl-row dl-row--disabled">
                 .deb (x64)
                 <svg class="dl-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
@@ -165,7 +175,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>© 2026 Hilda · Personal assistant for Windows</span>
+        <span>© 2026 Hilda · Personal assistant for Windows, macOS, and Linux</span>
         <span>Made for focus, not noise.</span>
       </div>
     </div>
@@ -176,10 +186,12 @@
     (function () {
       var missing = "Installer not available here — see From source if you have the repo.";
       var globalMsg = document.getElementById("download-status");
-      window.hildaInstaller.bindDownloadAnchors(".dl-win", missing);
-      window.hildaInstaller.check().then(function (ok) {
+      window.hildaInstaller.bindDownloadAnchors(".dl-win", "downloads/Hilda-Setup.exe", missing);
+      window.hildaInstaller.bindDownloadAnchors(".dl-mac", "downloads/Hilda-Setup.dmg", missing);
+      window.hildaInstaller.bindDownloadAnchors(".dl-linux", "downloads/Hilda-Setup.AppImage", missing);
+      window.hildaInstaller.check("downloads/Hilda-Setup.exe").then(function (ok) {
         if (globalMsg) {
-          globalMsg.textContent = ok ? "Windows download ready." : "Installer not published on this server.";
+          globalMsg.textContent = ok ? "Downloads ready." : "Installers not published on this server.";
         }
       });
     })();
