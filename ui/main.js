@@ -185,6 +185,9 @@ function createIslandWindow() {
     show: false,
   });
 
+  // Ignore mouse events on the transparent window background so clicks pass through to apps underneath
+  islandWindow.setIgnoreMouseEvents(true, { forward: true });
+
   islandWindow.loadFile(path.join(__dirname, "src", "index.html"));
   islandWindow.setMenuBarVisibility(false);
 
@@ -248,6 +251,12 @@ ipcMain.on("toggle-expand", () => {
 
 ipcMain.on("start-drag", () => {
   if (islandWindow) islandWindow.setIgnoreMouseEvents(false);
+});
+
+ipcMain.on("set-ignore-mouse-events", (e, ignore, forward) => {
+  if (islandWindow) {
+    islandWindow.setIgnoreMouseEvents(ignore, { forward: forward });
+  }
 });
 
 ipcMain.handle("get-project-root", () => getProjectRoot());

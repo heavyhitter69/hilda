@@ -233,20 +233,23 @@ def _resolve_app_target(name: str) -> str:
     if c3:
         return c3.value
 
-    # Last resort: look in user folders, but avoid obvious images.
+    import sys
+
+    # Last resort: look in user folders.
+    # We heavily penalize non-executables if we are on Windows, but we also want to allow
+    # opening folders if the user explicitly requests it.
     base = Path.home()
     search_dirs = [
         base,
-        base / "Documents",
-        base / "Documentos",
         base / "Desktop",
-        base / "Downloads",
-        base / "OneDrive" / "Documents",
-        base / "OneDrive" / "Documentos",
         base / "OneDrive" / "Desktop",
+        base / "Documents",
+        base / "Downloads",
     ]
 
     q = _norm(raw).replace(" folder", "").strip()
+    is_folder_request = "folder" in _norm(raw)
+
     best_path: Optional[Path] = None
     best_score = -1
     for sdir in search_dirs:
@@ -258,24 +261,29 @@ def _resolve_app_target(name: str) -> str:
                 if sc <= 0:
                     continue
                 if item.is_file() and item.suffix.lower() in _BANNED_USER_FILE_EXTS:
-                    sc -= 100
+                    sc -= 500  # huge penalty for images
                 if item.is_dir():
-                    sc += 10
-                if item.is_file() and item.suffix.lower() in {".lnk", ".exe"}:
-                    sc += 40
-                if sc > best_score:
+                    if is_folder_request:
+                        sc += 200 # boost if they explicitly asked for a folder
+                    else:
+                        sc -= 50  # slight penalty for folders if we want an app
+                if item.is_file() and item.suffix.lower() in {".lnk", ".exe", ".app"}:
+                    sc += 200  # heavy boost for actual shortcuts/apps
+                if sc > best_score and sc > 50:  # Require a decent score
                     best_score = sc
                     best_path = item
         except Exception:
             continue
 
-    if best_path is not None and best_score > 0:
+    if best_path is not None:
         return str(best_path)
 
     return raw
 
 def open_application(name: str) -> str:
     """Open an application by friendly name or executable name."""
+    import sys
+    import shutil
     sec = check_command(name)
     if not sec.safe:
         return f"Blocked: {sec.reason}"
@@ -283,9 +291,27 @@ def open_application(name: str) -> str:
     target = _resolve_app_target(name)
             
     try:
-        # Use 'start ""' to let the Windows shell properly open files, folders, or EXEs
-        # without spaces in Paths breaking the command. 
-        subprocess.Popen(f'start "" "{target}"', shell=True)
+        if sys.platform == "darwin":
+            if Path(target).exists():
+                subprocess.Popen(["open", target])
+            else:
+                subprocess.Popen(["open", "-a", target])
+        elif sys.platform == "linux":
+            if Path(target).exists():
+                subprocess.Popen(["xdg-open", target])
+            else:
+                # xdg-open doesn't open apps by name, it opens files/URLs.
+                # We use gtk-launch (if available) or search standard paths.
+                gtk_launch = shutil.which("gtk-launch")
+                if gtk_launch:
+                    subprocess.Popen([gtk_launch, target])
+                else:
+                    subprocess.Popen([target]) # Assume it's a command on PATH
+        else:
+            # Use 'start ""' to let the Windows shell properly open files, folders, or EXEs
+            # without spaces in Paths breaking the command.
+            subprocess.Popen(f'start "" "{target}"', shell=True)
+
         log.info("Opened application: %s (%s)", name, target)
         return f"Opening {name}."
     except Exception as e:

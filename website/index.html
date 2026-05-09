@@ -144,8 +144,9 @@
     (function () {
       var msg = document.getElementById("download-status");
       var missing = "Installer not included on this host — build from source if you have the repo.";
-      window.hildaInstaller.bindDownloadAnchors(".dl-win", missing);
-      window.hildaInstaller.check().then(function (ok) {
+      window.hildaInstaller.bindDownloadAnchors(".dl-win", "downloads/Hilda-Setup.exe", missing);
+
+      window.hildaInstaller.check("downloads/Hilda-Setup.exe").then(function (ok) {
         if (msg) {
           msg.textContent = ok ? "Ready to download." : "Download unavailable until the installer is published.";
         }
