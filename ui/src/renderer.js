@@ -268,7 +268,21 @@ if (ipc) ipc.onWsMessage((msg) => {
       console.log("[renderer] Python backend connected.");
       addMessage("ai", "Connected to Hilda backend.");
       break;
+
+    case "expand":
+      if (!island.classList.contains("expanded")) {
+        window.__toggleExpand();
+      }
+      break;
   }
+});
+
+// ── Mouse Events (Click-through) ──────────────────────────────────────────────
+island.addEventListener('mouseenter', () => {
+  if (ipc) ipc.send("set-ignore-mouse-events", false);
+});
+island.addEventListener('mouseleave', () => {
+  if (ipc) ipc.send("set-ignore-mouse-events", true, true);
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────

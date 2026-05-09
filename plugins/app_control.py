@@ -234,20 +234,22 @@ def _resolve_app_target(name: str) -> str:
         return c3.value
 
     import sys
-    if sys.platform != "win32":
-        # On Mac and Linux, `open -a` or `xdg-open` handles resolution.
-        return raw
 
-    # Last resort on Windows: look in user folders, but ONLY for executables/shortcuts if it's an app request.
-    # To fix "opens folder instead of app", we heavily penalize non-executables.
+    # Last resort: look in user folders.
+    # We heavily penalize non-executables if we are on Windows, but we also want to allow
+    # opening folders if the user explicitly requests it.
     base = Path.home()
     search_dirs = [
         base,
         base / "Desktop",
         base / "OneDrive" / "Desktop",
+        base / "Documents",
+        base / "Downloads",
     ]
 
     q = _norm(raw).replace(" folder", "").strip()
+    is_folder_request = "folder" in _norm(raw)
+
     best_path: Optional[Path] = None
     best_score = -1
     for sdir in search_dirs:
@@ -261,8 +263,11 @@ def _resolve_app_target(name: str) -> str:
                 if item.is_file() and item.suffix.lower() in _BANNED_USER_FILE_EXTS:
                     sc -= 500  # huge penalty for images
                 if item.is_dir():
-                    sc -= 100  # penalty for folders if we want an app
-                if item.is_file() and item.suffix.lower() in {".lnk", ".exe"}:
+                    if is_folder_request:
+                        sc += 200 # boost if they explicitly asked for a folder
+                    else:
+                        sc -= 50  # slight penalty for folders if we want an app
+                if item.is_file() and item.suffix.lower() in {".lnk", ".exe", ".app"}:
                     sc += 200  # heavy boost for actual shortcuts/apps
                 if sc > best_score and sc > 50:  # Require a decent score
                     best_score = sc
@@ -287,15 +292,21 @@ def open_application(name: str) -> str:
             
     try:
         if sys.platform == "darwin":
-            subprocess.Popen(["open", "-a", target])
-        elif sys.platform == "linux":
-            # xdg-open doesn't open apps by name, it opens files/URLs.
-            # We use gtk-launch (if available) or search standard paths.
-            gtk_launch = shutil.which("gtk-launch")
-            if gtk_launch:
-                subprocess.Popen([gtk_launch, target])
+            if Path(target).exists():
+                subprocess.Popen(["open", target])
             else:
-                subprocess.Popen([target]) # Assume it's a command on PATH
+                subprocess.Popen(["open", "-a", target])
+        elif sys.platform == "linux":
+            if Path(target).exists():
+                subprocess.Popen(["xdg-open", target])
+            else:
+                # xdg-open doesn't open apps by name, it opens files/URLs.
+                # We use gtk-launch (if available) or search standard paths.
+                gtk_launch = shutil.which("gtk-launch")
+                if gtk_launch:
+                    subprocess.Popen([gtk_launch, target])
+                else:
+                    subprocess.Popen([target]) # Assume it's a command on PATH
         else:
             # Use 'start ""' to let the Windows shell properly open files, folders, or EXEs
             # without spaces in Paths breaking the command.

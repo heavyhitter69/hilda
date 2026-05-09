@@ -76,11 +76,9 @@ class Settings:
     STT_LANGUAGE: str = os.getenv("STT_LANGUAGE", "en")
 
     # Wake: whisper_phrase (default, no Picovoice)
-    WAKE_ENGINE: str = os.getenv("WAKE_ENGINE", "whisper_phrase")
     WAKE_MAX_UTTERANCE_SECS: float = float(os.getenv("WAKE_MAX_UTTERANCE_SECS", "4"))
     WAKE_SILENCE_SECS: float = float(os.getenv("WAKE_SILENCE_SECS", "0.55"))
     WAKE_COOLDOWN_SECS: float = float(os.getenv("WAKE_COOLDOWN_SECS", "1.5"))
-    PORCUPINE_ACCESS_KEY: str = os.getenv("PORCUPINE_ACCESS_KEY", "")
 
     SCREEN_CAPTURE_FPS: int = 1
 

@@ -18,7 +18,7 @@
     "appId": "com.hilda.assistant",
     "productName": "Hilda",
     "artifactName": "Hilda-Setup.${ext}",
-    "icon": "build/icon.png",
+    "icon": "../hilda-ai.png",
     "directories": {
       "output": "../website/downloads"
     },
@@ -35,16 +35,13 @@
     ],
     "win": {
       "target": "nsis",
-      "signAndEditExecutable": false,
-      "icon": "build/icon.png"
+      "signAndEditExecutable": false
     },
     "mac": {
-      "target": "dmg",
-      "icon": "build/icon.png"
+      "target": "dmg"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "build/icon.png",
       "category": "Utility"
     },
     "nsis": {

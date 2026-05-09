@@ -58,7 +58,7 @@ function connectWS() {
 connectWS();
 
 const hildaBridge = {
-  send: (channel, data) => ipcRenderer.send(channel, data),
+  send: (channel, data, ...args) => ipcRenderer.send(channel, data, ...args),
 
   onIpc: (channel, callback) =>
     ipcRenderer.on(channel, (_, ...args) => callback(...args)),
