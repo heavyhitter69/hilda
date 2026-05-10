@@ -8,16 +8,16 @@
     "start": "electron .",
     "build": "electron-builder",
     "build:backend": "cd .. && pip install -r requirements.txt && python -m PyInstaller --noconfirm --clean hilda-engine.spec",
-    "build:website": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win nsis --publish never",
+    "build:website": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64 --arm64 --publish never",
     "build:folder": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win dir --publish never",
-    "build:mac": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --publish never",
-    "build:linux": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --linux AppImage --publish never",
+    "build:mac": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --x64 --arm64 --universal --publish never",
+    "build:linux": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --linux --x64 --arm64 --publish never",
     "build:full": "npm run build:backend && npm run build:website && npm run build:mac && npm run build:linux"
   },
   "build": {
     "appId": "com.hilda.assistant",
     "productName": "Hilda",
-    "artifactName": "Hilda-Setup.${ext}",
+    "artifactName": "Hilda-Setup-${os}-${arch}.${ext}",
     "icon": "build/icon.png",
     "directories": {
       "output": "../website/downloads"
@@ -34,18 +34,32 @@
       }
     ],
     "win": {
-      "target": "nsis",
+      "target": [
+        "nsis",
+        "nsis-web"
+      ],
       "signAndEditExecutable": false
     },
     "mac": {
       "target": "dmg"
     },
     "linux": {
-      "target": "AppImage",
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
       "category": "Utility"
     },
     "nsis": {
       "oneClick": true,
+      "perMachine": true,
+      "shortcutName": "Hilda"
+    },
+    "nsisWeb": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "Hilda-Setup-${os}-${arch}-User.${ext}",
       "shortcutName": "Hilda"
     },
     "files": [
