@@ -18,7 +18,7 @@
     "appId": "com.hilda.assistant",
     "productName": "Hilda",
     "artifactName": "Hilda-Setup.${ext}",
-    "icon": "../hilda-ai.png",
+    "icon": "build/icon.png",
     "directories": {
       "output": "../website/downloads"
     },
