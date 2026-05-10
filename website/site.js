@@ -19,29 +19,21 @@
 
   window.hildaInstaller = {
     detectOS: detectOS,
-    check: function (path) {
-      return fetch(path, { method: "HEAD" }).then(function (r) {
-        return r.ok;
-      }).catch(function() { return false; });
-    },
-    bindDownloadAnchors: function (selector, path, onMissingTitle) {
+    bindDownloadAnchors: function (selector, path) {
       var nodes = document.querySelectorAll(selector);
-      window.hildaInstaller.check(path).then(function (ok) {
-        nodes.forEach(function (a) {
-          if (!ok) {
-            a.classList.add("disabled");
-            if (a.tagName.toLowerCase() === 'a') {
-                a.setAttribute("href", "#installer-missing");
-            }
-            if (onMissingTitle) a.setAttribute("title", onMissingTitle);
-          } else {
-            a.classList.remove("disabled");
-            if (a.tagName.toLowerCase() === 'a') {
-                a.setAttribute("href", path);
-            }
-            a.removeAttribute("title");
-          }
-        });
+      // Construct the GitHub Release URL
+      var githubPath = path;
+      if (!path.startsWith("http")) {
+         var filename = path.split('/').pop();
+         githubPath = "https://github.com/heavyhitter69/hilda/releases/latest/download/" + filename;
+      }
+
+      nodes.forEach(function (a) {
+        a.classList.remove("disabled");
+        if (a.tagName.toLowerCase() === 'a') {
+            a.setAttribute("href", githubPath);
+        }
+        a.removeAttribute("title");
       });
     },
   };

@@ -169,12 +169,6 @@
       }
 
       window.hildaInstaller.bindDownloadAnchors(".dl-main", downloadPath, missing);
-
-      window.hildaInstaller.check(downloadPath).then(function (ok) {
-        if (msg) {
-          msg.textContent = ok ? "Ready to download." : "Download unavailable until the installer is published.";
-        }
-      });
     })();
   </script>
 </body>
