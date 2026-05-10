@@ -146,14 +146,14 @@
       var missing = "Installer not included on this host — build from source if you have the repo.";
       var os = window.hildaInstaller.detectOS();
 
-      var downloadPath = "downloads/Hilda-Setup.exe";
+      var downloadPath = "downloads/Hilda-Setup-win-x64.exe";
       var downloadText = "Download for Windows";
 
       if (os === 'Mac') {
-          downloadPath = "downloads/Hilda-Setup.dmg";
+          downloadPath = "downloads/Hilda-Setup-mac-x64.dmg";
           downloadText = "Download for macOS";
       } else if (os === 'Linux') {
-          downloadPath = "downloads/Hilda-Setup.AppImage";
+          downloadPath = "downloads/Hilda-Setup-linux-x64.AppImage";
           downloadText = "Download for Linux";
       }
 
