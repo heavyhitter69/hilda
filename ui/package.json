@@ -20,6 +20,11 @@
     "productName": "Hilda",
     "artifactName": "Hilda-Setup-${os}-${arch}.${ext}",
     "icon": "build/icon.png",
+    "publish": {
+      "provider": "github",
+      "owner": "heavyhitter69",
+      "repo": "hilda"
+    },
     "directories": {
       "output": "../website/downloads"
     },
