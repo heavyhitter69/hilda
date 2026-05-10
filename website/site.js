@@ -19,22 +19,43 @@
 
   window.hildaInstaller = {
     detectOS: detectOS,
-    bindDownloadAnchors: function (selector, path) {
+    bindDownloadAnchors: function (selector, path, missingMessage) {
+      console.log("Hilda Installer: Binding " + selector + " to " + path);
       var nodes = document.querySelectorAll(selector);
-      // Construct the GitHub Release URL
-      var githubPath = path;
-      if (!path.startsWith("http")) {
-         var filename = path.split('/').pop();
-         githubPath = "https://github.com/heavyhitter69/hilda/releases/latest/download/" + filename;
-      }
-
+      var self = this;
       nodes.forEach(function (a) {
-        a.classList.remove("disabled");
-        if (a.tagName.toLowerCase() === 'a') {
-            a.setAttribute("href", githubPath);
-        }
-        a.removeAttribute("title");
+        self.check(path).then(function(exists) {
+            if (exists) {
+                // If it exists locally, use the local path
+                a.classList.remove("disabled");
+                if (a.tagName.toLowerCase() === 'a' && path) {
+                    a.setAttribute("href", path);
+                }
+                a.removeAttribute("title");
+            } else {
+                // FALLBACK: If missing locally, point to GitHub Releases
+                var filename = path.split('/').pop();
+                var githubUrl = "https://github.com/heavyhitter69/hilda/releases/latest/download/" + filename;
+                
+                a.classList.remove("disabled");
+                if (a.tagName.toLowerCase() === 'a') {
+                    a.setAttribute("href", githubUrl);
+                }
+                a.removeAttribute("title");
+                console.log("Hilda Installer: " + filename + " not found locally, falling back to GitHub.");
+            }
+        });
       });
     },
+    check: function (path) {
+      // Check if the file actually exists on the server
+      return fetch(path, { method: 'HEAD' })
+        .then(function (res) {
+          return res.ok;
+        })
+        .catch(function () {
+          return false;
+        });
+    }
   };
 })();
