@@ -90,10 +90,6 @@
                 Mac (x64)
                 <svg class="dl-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
               </a>
-              <a class="dl-row dl-mac" href="downloads/Hilda-Setup-mac-universal.dmg">
-                Mac Universal
-                <svg class="dl-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-              </a>
             </div>
             <div class="dl-col">
               <div class="dl-col-head">
@@ -206,7 +202,7 @@
       var os = window.hildaInstaller.detectOS();
       var mainPath = "downloads/Hilda-Setup-win-x64.exe";
       if (os === "Mac") {
-        mainPath = "downloads/Hilda-Setup-mac-universal.dmg";
+        mainPath = "downloads/Hilda-Setup-mac-x64.dmg";
       } else if (os === "Linux") {
         mainPath = "downloads/Hilda-Setup-linux-x64.AppImage";
       }

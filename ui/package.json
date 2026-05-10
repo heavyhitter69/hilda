@@ -10,7 +10,7 @@
     "build:backend": "cd .. && pip install -r requirements.txt && python -m PyInstaller --noconfirm --clean hilda-engine.spec",
     "build:website": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64 --arm64 --publish never",
     "build:folder": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win dir --publish never",
-    "build:mac": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --x64 --arm64 --universal --publish never",
+    "build:mac": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --x64 --arm64 --publish never",
     "build:linux": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --linux --x64 --arm64 --publish never",
     "build:full": "npm run build:backend && npm run build:website && npm run build:mac && npm run build:linux"
   },
