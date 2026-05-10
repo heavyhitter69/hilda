@@ -60,13 +60,15 @@
     "nsis": {
       "oneClick": true,
       "perMachine": true,
-      "shortcutName": "Hilda"
+      "shortcutName": "Hilda",
+      "warningsAsErrors": false
     },
     "nsisWeb": {
       "oneClick": true,
       "perMachine": false,
       "artifactName": "Hilda-Setup-${os}-${arch}-User.${ext}",
-      "shortcutName": "Hilda"
+      "shortcutName": "Hilda",
+      "warningsAsErrors": false
     },
     "files": [
       "**/*",
