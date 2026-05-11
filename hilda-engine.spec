@@ -9,7 +9,13 @@ hidden_imports += collect_submodules('langchain')
 hidden_imports += collect_submodules('langchain_community')
 hidden_imports += collect_submodules('langchain_openai')
 hidden_imports += collect_submodules('tiktoken')
-hidden_imports += ['whisper', 'sounddevice', 'numpy', 'websockets', 'websockets.legacy', 'websockets.legacy.server', 'colorlog', 'webrtcvad', 'playwright', 'pyautogui', 'mss']
+hidden_imports += collect_submodules('core')
+hidden_imports += collect_submodules('plugins')
+hidden_imports += [
+    'whisper', 'sounddevice', 'numpy', 'websockets', 'websockets.legacy', 
+    'websockets.legacy.server', 'colorlog', 'webrtcvad', 'playwright', 
+    'pyautogui', 'mss', 'psutil', 'screen_brightness_control'
+]
 
 # Collect data files (models, configs, templates)
 datas = [
