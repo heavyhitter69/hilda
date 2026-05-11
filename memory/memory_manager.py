@@ -22,6 +22,14 @@ CREATE TABLE IF NOT EXISTS actions (
     action    TEXT    NOT NULL,
     response  TEXT
 );
+
+CREATE TABLE IF NOT EXISTS reminders (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT    NOT NULL,
+    message   TEXT    NOT NULL,
+    due_time  TEXT    NOT NULL,
+    completed INTEGER DEFAULT 0
+);
 """
 
 
@@ -37,7 +45,7 @@ class MemoryManager:
 
     def _init_db(self) -> None:
         with self._connect() as conn:
-            conn.execute(_SCHEMA)
+            conn.executescript(_SCHEMA)
             conn.commit()
 
     def log_action(self, action: str, response: str = "") -> None:
@@ -75,4 +83,58 @@ class MemoryManager:
         """Delete all stored actions (for testing)."""
         with self._connect() as conn:
             conn.execute("DELETE FROM actions")
+            conn.execute("DELETE FROM reminders")
             conn.commit()
+
+    def add_reminder(self, message: str, due_time: datetime) -> int:
+        """Store a new reminder."""
+        now = datetime.now()
+        with self._connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO reminders (timestamp, message, due_time, completed) "
+                "VALUES (?, ?, ?, 0)",
+                (now.isoformat(), message, due_time.isoformat()),
+            )
+            conn.commit()
+            return cur.lastrowid
+
+    def get_due_reminders(self) -> list[dict]:
+        """Return reminders that are due and not yet completed."""
+        now = datetime.now().isoformat()
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT id, message, due_time FROM reminders "
+                "WHERE completed = 0 AND due_time <= ?",
+                (now,),
+            ).fetchall()
+        return [{"id": r[0], "message": r[1], "due_time": r[2]} for r in rows]
+
+    def mark_reminder_completed(self, reminder_id: int) -> None:
+        """Mark a reminder as completed."""
+        with self._connect() as conn:
+            conn.execute(
+                "UPDATE reminders SET completed = 1 WHERE id = ?",
+                (reminder_id,),
+            )
+            conn.commit()
+
+    def get_all_reminders(self, include_completed: bool = False) -> list[dict]:
+        """Return all reminders."""
+        query = "SELECT id, message, due_time, completed FROM reminders"
+        if not include_completed:
+            query += " WHERE completed = 0"
+        query += " ORDER BY due_time ASC"
+        
+        with self._connect() as conn:
+            rows = conn.execute(query).fetchall()
+        return [
+            {"id": r[0], "message": r[1], "due_time": r[2], "completed": bool(r[3])}
+            for r in rows
+        ]
+
+    def delete_reminder(self, reminder_id: int) -> bool:
+        """Delete a reminder by ID."""
+        with self._connect() as conn:
+            cur = conn.execute("DELETE FROM reminders WHERE id = ?", (reminder_id,))
+            conn.commit()
+            return cur.rowcount > 0

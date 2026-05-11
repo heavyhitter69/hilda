@@ -84,6 +84,15 @@ class MediaInput(BaseModel):
 class ShortcutInput(BaseModel):
     action: str = Field(description="Shortcut action: project | cast | taskmgr")
 
+class ReminderInput(BaseModel):
+    message: str = Field(description="The message of the reminder")
+    minutes_from_now: Optional[int] = Field(None, description="Minutes from now to trigger")
+    absolute_time: Optional[str] = Field(None, description="Absolute time string like HH:MM")
+
+class TimerInput(BaseModel):
+    seconds: int = Field(description="Number of seconds for the timer")
+    message: str = Field(default="Timer", description="Message to show when timer expires")
+
 
 # ── Tool implementations ──────────────────────────────────────────────────────
 
@@ -239,6 +248,51 @@ def tool_battery_status() -> str:
     from plugins.system_control import get_battery_status
     return get_battery_status()
 
+def tool_set_reminder(message: str, minutes_from_now: Optional[int] = None, absolute_time: Optional[str] = None) -> str:
+    from plugins.reminder_control import add_reminder
+    return add_reminder(message, minutes_from_now, absolute_time)
+
+def tool_list_reminders() -> str:
+    from plugins.reminder_control import list_reminders
+    return list_reminders()
+
+def tool_set_timer(seconds: int, message: str = "Timer") -> str:
+    from plugins.timer_control import set_timer
+    return set_timer(seconds, message)
+
+def tool_get_time() -> str:
+    from plugins.info_control import get_current_time
+    return get_current_time()
+
+def tool_get_date() -> str:
+    from plugins.info_control import get_current_date
+    return get_current_date()
+
+def tool_empty_trash() -> str:
+    from plugins.system_control import empty_recycle_bin
+    return empty_recycle_bin()
+
+def tool_system_info() -> str:
+    from plugins.system_control import get_detailed_system_info
+    return get_detailed_system_info()
+
+def tool_get_capabilities() -> str:
+    import sys
+    import shutil
+    caps = [f"Operating System: {sys.platform}"]
+    if sys.platform == "win32":
+        caps.append("Capabilities: PowerShell, WinRT Notifications, AppControl (Start Menu)")
+    elif sys.platform == "darwin":
+        caps.append("Capabilities: AppleScript, osascript Notifications, AppControl (open)")
+        if shutil.which("blueutil"):
+            caps.append("Extra: bluetooth control (blueutil) available")
+    else:
+        caps.append("Capabilities: systemctl, notify-send Notifications, AppControl (xdg-open)")
+        if shutil.which("nmcli"): caps.append("Extra: wifi control (nmcli) available")
+        if shutil.which("rfkill"): caps.append("Extra: bluetooth control (rfkill) available")
+    
+    return "\n".join(caps)
+
 
 # ── Build LangChain tools ─────────────────────────────────────────────────────
 
@@ -390,6 +444,48 @@ TOOLS = [
         func=tool_battery_status,
         name="get_battery_info",
         description="Get current battery percentage and charging state.",
+    ),
+    StructuredTool.from_function(
+        func=tool_set_reminder,
+        name="set_reminder",
+        description="Set a reminder for the user. Provide either minutes_from_now OR absolute_time (HH:MM).",
+        args_schema=ReminderInput,
+    ),
+    StructuredTool.from_function(
+        func=tool_list_reminders,
+        name="list_reminders",
+        description="List all active reminders.",
+    ),
+    StructuredTool.from_function(
+        func=tool_set_timer,
+        name="set_timer",
+        description="Set a short-term timer in seconds.",
+        args_schema=TimerInput,
+    ),
+    StructuredTool.from_function(
+        func=tool_get_time,
+        name="get_current_time",
+        description="Get the current local time.",
+    ),
+    StructuredTool.from_function(
+        func=tool_get_date,
+        name="get_current_date",
+        description="Get today's date.",
+    ),
+    StructuredTool.from_function(
+        func=tool_empty_trash,
+        name="empty_recycle_bin",
+        description="Empty the system recycle bin / trash.",
+    ),
+    StructuredTool.from_function(
+        func=tool_system_info,
+        name="get_system_info",
+        description="Get technical information about the PC (OS, CPU, RAM).",
+    ),
+    StructuredTool.from_function(
+        func=tool_get_capabilities,
+        name="get_machine_capabilities",
+        description="Detect the OS and what system-level tools are available.",
     ),
 ]
 

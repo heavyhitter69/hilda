@@ -47,6 +47,42 @@ async def startup_greeting() -> None:
     await broadcast_state("idle")
 
 
+async def reminder_worker() -> None:
+    """Background task to poll for due reminders."""
+    from memory.memory_manager import MemoryManager
+    from voice.text_to_speech import speak
+    from plugins.reminder_control import show_notification
+    from core.websocket_server import broadcast_message, broadcast_state
+
+    mm = MemoryManager()
+    log.info("Reminder worker started.")
+    
+    while True:
+        try:
+            due = mm.get_due_reminders()
+            for r in due:
+                msg = f"Reminder: {r['message']}"
+                log.info("Triggering reminder: %s", msg)
+                
+                # Visual + WS
+                await broadcast_state("speaking")
+                await broadcast_message("assistant", msg)
+                show_notification("Reminder", r['message'])
+                
+                # Voice
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(None, speak, msg)
+                
+                # Mark done
+                mm.mark_reminder_completed(r['id'])
+                await broadcast_state("idle")
+                
+        except Exception as e:
+            log.error("Error in reminder worker: %s", e)
+            
+        await asyncio.sleep(30)  # Check every 30 seconds
+
+
 async def main() -> None:
     from core import websocket_server as ws_server
 
@@ -77,10 +113,11 @@ async def main() -> None:
         if not setup_mode:
             await startup_greeting()
 
-    # Run WebSocket server + greeting concurrently
+    # Run WebSocket server + greeting + reminder worker concurrently
     await asyncio.gather(
         start_server(),
         delayed_greeting(),
+        reminder_worker(),
     )
 
 

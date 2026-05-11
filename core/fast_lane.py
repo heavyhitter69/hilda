@@ -400,6 +400,8 @@ def try_dispatch(user_text: str) -> Optional[str]:
         return tool_set_volume("down")
     if "mute" in low:
         from core.planner import tool_set_volume
+        if "unmute" in low:
+            return tool_set_volume("unmute")
         return tool_set_volume("mute")
     
     media_match = re.search(r"\b(play|pause|next|previous|prev)\s+(music|song|video|track|media)?\b", low)
@@ -435,5 +437,38 @@ def try_dispatch(user_text: str) -> Optional[str]:
     if any(p in low for p in ("battery", "power level", "charging")):
         from core.planner import tool_battery_status
         return tool_battery_status()
+
+    # ── Time & Date ────────────────────────────────────────────────────────
+    if any(p in low for p in ("what time is it", "current time", "what's the time")):
+        from core.planner import tool_get_time
+        return tool_get_time()
+    if any(p in low for p in ("what's the date", "what is the date", "today's date", "todays date")):
+        from core.planner import tool_get_date
+        return tool_get_date()
+
+    # ── Reminders & Timers (Basic) ─────────────────────────────────────────
+    rem_match = re.search(r"remind\s+me\s+to\s+(.+)\s+in\s+(\d+)\s+minutes?", low)
+    if rem_match:
+        msg = rem_match.group(1)
+        mins = int(rem_match.group(2))
+        from core.planner import tool_set_reminder
+        return tool_set_reminder(msg, minutes_from_now=mins)
+
+    timer_match = re.search(r"set\s+(?:a\s+)?timer\s+for\s+(\d+)\s+(seconds?|minutes?)", low)
+    if timer_match:
+        val = int(timer_match.group(1))
+        unit = timer_match.group(2)
+        secs = val * 60 if unit.startswith("min") else val
+        from core.planner import tool_set_timer
+        return tool_set_timer(secs, f"Timer for {val} {unit}")
+
+    # ── Miscellaneous ──────────────────────────────────────────────────────
+    if any(p in low for p in ("empty", "clear")) and any(p in low for p in ("trash", "recycle bin", "bin")):
+        from core.planner import tool_empty_trash
+        return tool_empty_trash()
+
+    if any(p in low for p in ("system info", "pc info", "computer info", "specs", "specifications")):
+        from core.planner import tool_system_info
+        return tool_system_info()
 
     return None

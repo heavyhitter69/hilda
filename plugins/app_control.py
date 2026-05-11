@@ -34,6 +34,21 @@ APP_MAP: dict[str, str] = {
     "slack":      "slack.exe",
     "zoom":       "Zoom.exe",
     "obs":        "obs64.exe",
+    "steam":      "steam.exe",
+    "epic":       "EpicGamesLauncher.exe",
+    "battlenet":  "Battle.net.exe",
+    "origin":     "Origin.exe",
+    "uplay":      "upc.exe",
+    "ubisoft":    "upc.exe",
+    "photoshop":  "Photoshop.exe",
+    "premiere":   "Premiere.exe",
+    "after effects": "AfterFX.exe",
+    "illustrator": "Illustrator.exe",
+    "blender":    "blender.exe",
+    "postman":    "Postman.exe",
+    "docker":     "Docker Desktop.exe",
+    "vlc":        "vlc.exe",
+    "handbrake":  "Handbrake.exe",
 }
 
 
