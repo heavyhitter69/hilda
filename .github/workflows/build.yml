@@ -34,6 +34,9 @@ jobs:
 
       - name: Install Python Dependencies
         run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          fi
           pip install -r requirements.txt
           pip install pyinstaller
 
