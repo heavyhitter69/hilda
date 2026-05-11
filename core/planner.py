@@ -69,6 +69,21 @@ class CommandInput(BaseModel):
 class DictationInput(BaseModel):
     mode: str = Field(default="paste", description="How to enter text: paste | type")
 
+class HardwareInput(BaseModel):
+    state: bool = Field(description="True to enable/turn on, False to disable/turn off")
+
+class BrightnessInput(BaseModel):
+    level: int = Field(description="Brightness level from 0 to 100")
+
+class VolumeInput(BaseModel):
+    action: str = Field(description="Volume action: up | down | mute")
+
+class MediaInput(BaseModel):
+    action: str = Field(description="Media action: play | pause | next | prev")
+
+class ShortcutInput(BaseModel):
+    action: str = Field(description="Shortcut action: project | cast | taskmgr")
+
 
 # ── Tool implementations ──────────────────────────────────────────────────────
 
@@ -184,6 +199,46 @@ def tool_dictate_and_enter(mode: str = "paste") -> str:
         return type_text(text)
     return paste_text(text)
 
+def tool_toggle_wifi(state: bool) -> str:
+    from plugins.system_control import control_wifi
+    return control_wifi(state)
+
+def tool_toggle_bluetooth(state: bool) -> str:
+    from plugins.system_control import control_bluetooth
+    return control_bluetooth(state)
+
+def tool_toggle_airplane(state: bool) -> str:
+    from plugins.system_control import control_airplane_mode
+    return control_airplane_mode(state)
+
+def tool_toggle_hotspot(state: bool) -> str:
+    from plugins.system_control import control_hotspot
+    return control_hotspot(state)
+
+def tool_screenshot() -> str:
+    from plugins.system_control import take_screenshot
+    return take_screenshot()
+
+def tool_set_volume(action: str) -> str:
+    from plugins.system_control import set_volume
+    return set_volume(action)
+
+def tool_set_brightness(level: int) -> str:
+    from plugins.system_control import set_brightness
+    return set_brightness(level)
+
+def tool_media_control(action: str) -> str:
+    from plugins.system_control import media_control
+    return media_control(action)
+
+def tool_trigger_shortcut(action: str) -> str:
+    from plugins.system_control import trigger_shortcut
+    return trigger_shortcut(action)
+
+def tool_battery_status() -> str:
+    from plugins.system_control import get_battery_status
+    return get_battery_status()
+
 
 # ── Build LangChain tools ─────────────────────────────────────────────────────
 
@@ -277,6 +332,64 @@ TOOLS = [
         name="dictate_and_enter",
         description="Record speech and enter it into the focused app (dictation).",
         args_schema=DictationInput,
+    ),
+    StructuredTool.from_function(
+        func=tool_toggle_wifi,
+        name="toggle_wifi",
+        description="Turn Wi-Fi on (True) or off (False).",
+        args_schema=HardwareInput,
+    ),
+    StructuredTool.from_function(
+        func=tool_toggle_bluetooth,
+        name="toggle_bluetooth",
+        description="Turn Bluetooth on (True) or off (False).",
+        args_schema=HardwareInput,
+    ),
+    StructuredTool.from_function(
+        func=tool_toggle_airplane,
+        name="toggle_airplane_mode",
+        description="Turn Airplane Mode on (True) or off (False).",
+        args_schema=HardwareInput,
+    ),
+    StructuredTool.from_function(
+        func=tool_toggle_hotspot,
+        name="toggle_hotspot",
+        description="Turn Mobile Hotspot on (True) or off (False).",
+        args_schema=HardwareInput,
+    ),
+    StructuredTool.from_function(
+        func=tool_screenshot,
+        name="take_screenshot",
+        description="Capture a screenshot of the entire screen.",
+    ),
+    StructuredTool.from_function(
+        func=tool_set_volume,
+        name="set_volume",
+        description="Adjust volume: up, down, or mute.",
+        args_schema=VolumeInput,
+    ),
+    StructuredTool.from_function(
+        func=tool_set_brightness,
+        name="set_brightness",
+        description="Adjust display brightness level (0-100).",
+        args_schema=BrightnessInput,
+    ),
+    StructuredTool.from_function(
+        func=tool_media_control,
+        name="media_control",
+        description="Control media playback: play, pause, next, prev.",
+        args_schema=MediaInput,
+    ),
+    StructuredTool.from_function(
+        func=tool_trigger_shortcut,
+        name="trigger_system_shortcut",
+        description="Trigger a system shortcut: project (Win+P), cast (Win+K), or taskmgr.",
+        args_schema=ShortcutInput,
+    ),
+    StructuredTool.from_function(
+        func=tool_battery_status,
+        name="get_battery_info",
+        description="Get current battery percentage and charging state.",
     ),
 ]
 

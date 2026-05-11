@@ -71,10 +71,9 @@ class AudioManager:
 
             if not text.strip():
                 log.info("No speech detected after wake.")
-                await websocket_server.broadcast_message(
-                    "assistant",
-                    "I didn't catch that — say it again, or type your request.",
-                )
+                feedback = "I didn't catch that — say it again, or type your request."
+                await websocket_server.broadcast_message("assistant", feedback)
+                await loop.run_in_executor(None, speak, feedback)
                 await websocket_server.broadcast_state("idle")
                 return
 

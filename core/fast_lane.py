@@ -379,4 +379,61 @@ def try_dispatch(user_text: str) -> Optional[str]:
         log.info("Fast lane: open app %s", appish[:40])
         return _tool_open_app(appish)
 
+    # ── Hardware Toggles ───────────────────────────────────────────────────
+    hw_match = re.search(r"\b(turn\s+)?(on|off|enable|disable)\s+(wifi|wi-fi|bluetooth|airplane\s+mode|hotspot)\b", low)
+    if hw_match:
+        state = hw_match.group(2) in ("on", "enable")
+        target = hw_match.group(3).replace("wi-fi", "wifi").replace("airplane mode", "airplane")
+        log.info("Fast lane: toggle %s to %s", target, state)
+        from core.planner import tool_toggle_wifi, tool_toggle_bluetooth, tool_toggle_airplane, tool_toggle_hotspot
+        if target == "wifi": return tool_toggle_wifi(state)
+        if target == "bluetooth": return tool_toggle_bluetooth(state)
+        if target == "airplane": return tool_toggle_airplane(state)
+        if target == "hotspot": return tool_toggle_hotspot(state)
+
+    # ── Volume & Media ─────────────────────────────────────────────────────
+    if "volume up" in low or "increase volume" in low:
+        from core.planner import tool_set_volume
+        return tool_set_volume("up")
+    if "volume down" in low or "decrease volume" in low:
+        from core.planner import tool_set_volume
+        return tool_set_volume("down")
+    if "mute" in low:
+        from core.planner import tool_set_volume
+        return tool_set_volume("mute")
+    
+    media_match = re.search(r"\b(play|pause|next|previous|prev)\s+(music|song|video|track|media)?\b", low)
+    if media_match:
+        act = media_match.group(1).replace("previous", "prev")
+        from core.planner import tool_media_control
+        return tool_media_control(act)
+
+    # ── Brightness ─────────────────────────────────────────────────────────
+    bright_match = re.search(r"\b(set|change|put)\s+brightness\s+(to\s+)?(\d+)\b", low)
+    if bright_match:
+        lvl = int(bright_match.group(3))
+        from core.planner import tool_set_brightness
+        return tool_set_brightness(lvl)
+
+    # ── Screenshot ─────────────────────────────────────────────────────────
+    if any(p in low for p in ("screenshot", "take a snap", "capture screen")):
+        from core.planner import tool_screenshot
+        return tool_screenshot()
+
+    # ── System Shortcuts ───────────────────────────────────────────────────
+    if "project" in low or "projection" in low:
+        from core.planner import tool_trigger_shortcut
+        return tool_trigger_shortcut("project")
+    if "cast" in low or "screen mirror" in low:
+        from core.planner import tool_trigger_shortcut
+        return tool_trigger_shortcut("cast")
+    if "task manager" in low or "taskmgr" in low:
+        from core.planner import tool_trigger_shortcut
+        return tool_trigger_shortcut("taskmgr")
+
+    # ── Battery ────────────────────────────────────────────────────────────
+    if any(p in low for p in ("battery", "power level", "charging")):
+        from core.planner import tool_battery_status
+        return tool_battery_status()
+
     return None

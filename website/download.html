@@ -198,12 +198,11 @@
       var globalMsg = document.getElementById("download-status");
 
       var os = window.hildaInstaller.detectOS();
-      var mainPath = "downloads/Hilda-Setup-win-x64.exe";
-      if (os === "Mac") {
-        mainPath = "downloads/Hilda-Setup-mac-x64.dmg";
-      } else if (os === "Linux") {
-        mainPath = "downloads/Hilda-Setup-linux-x64.AppImage";
-      }
+      
+      // Bind the three main hero buttons
+      window.hildaInstaller.bindDownloadAnchors(".dl-win", "downloads/Hilda-Setup-win-x64.exe", missing);
+      window.hildaInstaller.bindDownloadAnchors(".dl-mac", "downloads/Hilda-Setup-mac-x64.dmg", missing);
+      window.hildaInstaller.bindDownloadAnchors(".dl-linux", "downloads/Hilda-Setup-linux-x86_64.AppImage", missing);
 
       var nodes = document.querySelectorAll(".dl-row");
       nodes.forEach(function(node) {
