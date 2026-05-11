@@ -72,6 +72,7 @@ jobs:
         run: npm run build:linux
 
       - name: Cleanup before upload
+        shell: bash
         run: |
           # Remove blockmap files to save space and reduce clutter
           rm -f website/downloads/*.blockmap
