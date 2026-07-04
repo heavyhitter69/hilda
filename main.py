@@ -93,7 +93,8 @@ async def main() -> None:
     log.info("WebSocket   : ws://%s:%d", settings.WEBSOCKET_HOST, settings.WEBSOCKET_PORT)
     log.info("Local model : %s @ %s", settings.OLLAMA_MODEL, settings.OLLAMA_HOST)
     log.info("Cloud model : %s (key set: %s)", settings.OPENAI_MODEL, bool(settings.OPENAI_API_KEY))
-    log.info("Voice TTS   : %s", "Coqui" if settings.USE_COQUI_TTS else "pyttsx3")
+    _tts_engine = "Edge TTS" if settings.USE_EDGE_TTS else ("Coqui" if settings.USE_COQUI_TTS else "pyttsx3")
+    log.info("Voice TTS   : %s", _tts_engine)
     log.info("Vision      : %s", "enabled" if settings.USE_VISION else "disabled")
 
     loop = asyncio.get_event_loop()

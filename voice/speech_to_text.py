@@ -1,42 +1,62 @@
 """
 voice/speech_to_text.py — Convert recorded audio to text using Whisper.
 
+Prefers faster-whisper (CTranslate2 backend, ~4× faster on CPU, ~35% less RAM).
+Falls back to openai-whisper if faster-whisper is not installed.
+
 The recording starts when triggered (post-wake-word) and stops after
 a configurable silence timeout.
 """
+from __future__ import annotations
+
 import io
 import wave
 from typing import Callable, Optional
 
 import numpy as np
 import sounddevice as sd
-import whisper
 
 from config.settings import settings
 from core.logger import get_logger
 
 log = get_logger(__name__)
 
-_SAMPLE_RATE   = 16000
-_CHANNELS      = 1
-_CHUNK         = 1024
-_SILENCE_SECS  = float(getattr(settings, "STT_SILENCE_SECS", 0.9))
-_SILENCE_THRESH = int(getattr(settings, "STT_SILENCE_THRESH", 100))
+_SAMPLE_RATE     = 16000
+_CHANNELS        = 1
+_CHUNK           = 1024
+_SILENCE_SECS    = float(getattr(settings, "STT_SILENCE_SECS", 0.9))
+_SILENCE_THRESH  = int(getattr(settings, "STT_SILENCE_THRESH", 100))
 _MAX_RECORD_SECS = int(getattr(settings, "STT_MAX_RECORD_SECS", 20))
 
-# Load model lazily
-_model: Optional[whisper.Whisper] = None
+# ── Backend detection ─────────────────────────────────────────────────────────
+
+try:
+    from faster_whisper import WhisperModel as _FasterWhisperModel
+    _USE_FASTER = True
+    log.info("faster-whisper backend available — using CTranslate2 engine.")
+except ImportError:
+    _USE_FASTER = False
+    log.info("faster-whisper not installed — falling back to openai-whisper.")
+    import whisper as _whisper  # type: ignore
+
+_model = None
 
 
-def _get_model() -> whisper.Whisper:
+def _get_model():
     global _model
     if _model is None:
-        log.info("Loading Whisper model '%s' (first load may take a moment)…",
-                 settings.WHISPER_MODEL)
-        _model = whisper.load_model(settings.WHISPER_MODEL)
+        model_name = settings.WHISPER_MODEL
+        if _USE_FASTER:
+            log.info("Loading faster-whisper model '%s'…", model_name)
+            _model = _FasterWhisperModel(model_name, device="cpu", compute_type="int8")
+        else:
+            log.info("Loading openai-whisper model '%s'…", model_name)
+            _model = _whisper.load_model(model_name)
         log.info("Whisper model loaded.")
     return _model
 
+
+# ── Audio capture ─────────────────────────────────────────────────────────────
 
 def record_until_silence() -> bytes:
     """
@@ -47,12 +67,12 @@ def record_until_silence() -> bytes:
     frames: list[bytes] = []
     silent_chunks = 0
     max_silent = int(_SILENCE_SECS * _SAMPLE_RATE / _CHUNK)
-    max_total = int(_MAX_RECORD_SECS * _SAMPLE_RATE / _CHUNK)
+    max_total   = int(_MAX_RECORD_SECS * _SAMPLE_RATE / _CHUNK)
 
     with sd.RawInputStream(samplerate=_SAMPLE_RATE, blocksize=_CHUNK,
-                           dtype='int16', channels=_CHANNELS) as stream:
+                           dtype="int16", channels=_CHANNELS) as stream:
         for _ in range(max_total):
-            data, overflowed = stream.read(_CHUNK)
+            data, _ = stream.read(_CHUNK)
             data_bytes = bytes(data)
             frames.append(data_bytes)
             amplitude = np.abs(np.frombuffer(data_bytes, dtype=np.int16)).max()
@@ -78,9 +98,11 @@ def pcm_to_wav(pcm: bytes) -> bytes:
     return buf.getvalue()
 
 
+# ── Transcription ─────────────────────────────────────────────────────────────
+
 def transcribe(pcm: bytes, initial_prompt: str | None = None) -> str:
     """
-    Transcribe PCM audio to text using Whisper.
+    Transcribe PCM audio to text using Whisper (faster-whisper preferred).
     Optional initial_prompt biases recognition toward enrolled phrases / accent context.
     """
     model = _get_model()
@@ -88,11 +110,20 @@ def transcribe(pcm: bytes, initial_prompt: str | None = None) -> str:
     audio_np = (
         np.frombuffer(wav_bytes[44:], dtype=np.int16).astype(np.float32) / 32768.0
     )
-    kw: dict = {"language": settings.STT_LANGUAGE, "fp16": False}
-    if initial_prompt and initial_prompt.strip():
-        kw["initial_prompt"] = initial_prompt.strip()
-    result = model.transcribe(audio_np, **kw)
-    text = result.get("text", "").strip()
+
+    if _USE_FASTER:
+        kwargs: dict = {"language": settings.STT_LANGUAGE}
+        if initial_prompt and initial_prompt.strip():
+            kwargs["initial_prompt"] = initial_prompt.strip()
+        segments, _ = model.transcribe(audio_np, **kwargs)
+        text = " ".join(s.text for s in segments).strip()
+    else:
+        kw: dict = {"language": settings.STT_LANGUAGE, "fp16": False}
+        if initial_prompt and initial_prompt.strip():
+            kw["initial_prompt"] = initial_prompt.strip()
+        result = model.transcribe(audio_np, **kw)
+        text = result.get("text", "").strip()
+
     log.info("Transcribed: '%s'", text)
     return text
 
@@ -121,9 +152,9 @@ def record_next_utterance(
 
     try:
         with sd.RawInputStream(samplerate=_SAMPLE_RATE, blocksize=_CHUNK,
-                               dtype='int16', channels=_CHANNELS) as stream:
+                               dtype="int16", channels=_CHANNELS) as stream:
             while phase == "wait_speech" and waited < max_chunks_wait:
-                data, overflowed = stream.read(_CHUNK)
+                data, _ = stream.read(_CHUNK)
                 data_bytes = bytes(data)
                 waited += 1
                 amp = int(np.abs(np.frombuffer(data_bytes, dtype=np.int16)).max())
@@ -147,10 +178,10 @@ def record_next_utterance(
 
             silent_chunks = 0
             max_silent = int(ss * _SAMPLE_RATE / _CHUNK)
-            max_total = int(max_secs * _SAMPLE_RATE / _CHUNK)
+            max_total  = int(max_secs * _SAMPLE_RATE / _CHUNK)
 
             while len(frames) < max_total:
-                data, overflowed = stream.read(_CHUNK)
+                data, _ = stream.read(_CHUNK)
                 data_bytes = bytes(data)
                 frames.append(data_bytes)
                 amp = int(np.abs(np.frombuffer(data_bytes, dtype=np.int16)).max())

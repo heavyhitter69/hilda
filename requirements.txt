@@ -5,26 +5,38 @@ langchain-community>=0.2.0
 langchain-openai>=0.1.0
 ollama>=0.2.0
 
-# ─── Voice ──────────────────────────────────────────────────────────────────
+# ─── Voice / STT ─────────────────────────────────────────────────────────────
+# faster-whisper is the preferred backend (~4× faster on CPU, ~35% less RAM)
+# Falls back to openai-whisper automatically if not installed.
+faster-whisper>=1.0.0
 openai-whisper>=20231117
-pyttsx3>=2.90
 sounddevice>=0.4.6
 soundfile>=0.12.1
+
+# ─── Voice / TTS ─────────────────────────────────────────────────────────────
+# Default: pyttsx3 (fast, offline)
+pyttsx3>=2.90
+# Optional Edge TTS: USE_EDGE_TTS=true in .env (neural Microsoft voices, no API key)
+edge-tts>=6.1.9
 # TTS>=0.22.0    # Uncomment to enable Coqui TTS (heavy, ~1GB model download)
 
-# ─── Computer Control ───────────────────────────────────────────────────────
+# ─── Computer Control ─────────────────────────────────────────────────────────
 pyautogui>=0.9.54
 playwright>=1.44.0
 
-# ─── Vision ─────────────────────────────────────────────────────────────────
+# ─── Windows Volume (stateful, replaces blind key-press toggling) ─────────────
+# Windows-only: pycaw reads/writes IAudioEndpointVolume directly via COM
+pycaw>=20230407
+
+# ─── Vision ──────────────────────────────────────────────────────────────────
 opencv-python>=4.9.0
 mss>=9.0.1
 Pillow>=10.0.0
 
-# ─── Communication ──────────────────────────────────────────────────────────
+# ─── Communication ────────────────────────────────────────────────────────────
 websockets>=12.0
 
-# ─── Utilities ──────────────────────────────────────────────────────────────
+# ─── Utilities ────────────────────────────────────────────────────────────────
 python-dotenv>=1.0.0
 colorlog>=6.8.0
 numpy>=1.26.0

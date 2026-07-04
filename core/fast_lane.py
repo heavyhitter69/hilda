@@ -398,10 +398,11 @@ def try_dispatch(user_text: str) -> Optional[str]:
     if "volume down" in low or "decrease volume" in low:
         from core.planner import tool_set_volume
         return tool_set_volume("down")
+    if "unmute" in low:
+        from core.planner import tool_set_volume
+        return tool_set_volume("unmute")
     if "mute" in low:
         from core.planner import tool_set_volume
-        if "unmute" in low:
-            return tool_set_volume("unmute")
         return tool_set_volume("mute")
     
     media_match = re.search(r"\b(play|pause|next|previous|prev)\s+(music|song|video|track|media)?\b", low)

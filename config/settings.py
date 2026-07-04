@@ -85,6 +85,8 @@ class Settings:
     USE_CLOUD_FALLBACK: bool = os.getenv("USE_CLOUD_FALLBACK", "true").lower() == "true"
     USE_VISION: bool = os.getenv("USE_VISION", "true").lower() == "true"
     USE_COQUI_TTS: bool = os.getenv("USE_COQUI_TTS", "false").lower() == "true"
+    USE_EDGE_TTS: bool = os.getenv("USE_EDGE_TTS", "false").lower() == "true"
+    EDGE_TTS_VOICE: str = os.getenv("EDGE_TTS_VOICE", "en-US-AriaNeural")
     USE_FAST_LANE: bool = os.getenv("USE_FAST_LANE", "true").lower() == "true"
 
     WEBSOCKET_HOST: str = "localhost"

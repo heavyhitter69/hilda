@@ -5,7 +5,7 @@ Converts natural-language user requests into ordered tool calls.
 All tools pass through security.check_command before execution.
 """
 import asyncio
-from typing import Any
+from typing import Any, Optional
 
 from langchain.agents import create_agent
 from langchain_core.tools import StructuredTool
@@ -76,7 +76,8 @@ class BrightnessInput(BaseModel):
     level: int = Field(description="Brightness level from 0 to 100")
 
 class VolumeInput(BaseModel):
-    action: str = Field(description="Volume action: up | down | mute")
+    action: str = Field(description="Volume action: up | down | mute | unmute | set")
+    level: Optional[int] = Field(None, description="Absolute volume level 0-100, used when action='set'")
 
 class MediaInput(BaseModel):
     action: str = Field(description="Media action: play | pause | next | prev")
@@ -228,9 +229,9 @@ def tool_screenshot() -> str:
     from plugins.system_control import take_screenshot
     return take_screenshot()
 
-def tool_set_volume(action: str) -> str:
+def tool_set_volume(action: str, level: Optional[int] = None) -> str:
     from plugins.system_control import set_volume
-    return set_volume(action)
+    return set_volume(action, level)
 
 def tool_set_brightness(level: int) -> str:
     from plugins.system_control import set_brightness
@@ -419,7 +420,7 @@ TOOLS = [
     StructuredTool.from_function(
         func=tool_set_volume,
         name="set_volume",
-        description="Adjust volume: up, down, or mute.",
+        description="Adjust volume: up (+10%), down (-10%), mute, unmute, or set to an absolute level (0-100).",
         args_schema=VolumeInput,
     ),
     StructuredTool.from_function(
