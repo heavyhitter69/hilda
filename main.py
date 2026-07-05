@@ -34,9 +34,10 @@ ASCII_BANNER = r"""
 async def startup_greeting() -> None:
     """Deliver a startup greeting and habit suggestion."""
     from memory.pattern_learner import PatternLearner
+    from core.personality import get_startup_greeting
 
     suggestion = PatternLearner().get_suggestion_now()
-    greeting = suggestion or "Hello! I'm Hilda. How can I help?"
+    greeting = get_startup_greeting(suggestion=suggestion)
 
     await broadcast_state("speaking")
     await broadcast_message("assistant", greeting)
@@ -114,6 +115,11 @@ async def main() -> None:
         if not setup_mode:
             await startup_greeting()
 
+    # Start proactive engine
+    from core.proactive_engine import start_proactive_engine
+    if not setup_mode:
+        start_proactive_engine()
+
     # Run WebSocket server + greeting + reminder worker concurrently
     await asyncio.gather(
         start_server(),
@@ -126,4 +132,9 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
+        from core.agent import get_agent
+        from core.proactive_engine import stop_proactive_engine
+        
+        stop_proactive_engine()
+        get_agent().save_conversation()
         log.info("Hilda shut down by user.")

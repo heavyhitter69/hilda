@@ -1,7 +1,6 @@
 """
 plugins/timer_control.py — Quick in-memory timers.
 """
-import asyncio
 import threading
 from core.logger import get_logger
 from voice.text_to_speech import speak

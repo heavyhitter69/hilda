@@ -62,6 +62,8 @@ class Settings:
     # ── AI Models ────────────────────────────────────────────────────────────
     OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3")
+    OLLAMA_MAX_TOKENS: int = int(os.getenv("OLLAMA_MAX_TOKENS", "1024"))
+    USE_OLLAMA_TOOLS: bool = os.getenv("USE_OLLAMA_TOOLS", "true").lower() == "true"
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o")
     OPENAI_VISION_MODEL: str = os.getenv("OPENAI_VISION_MODEL", "gpt-4o")
@@ -93,9 +95,34 @@ class Settings:
     WEBSOCKET_PORT: int = int(os.getenv("WEBSOCKET_PORT", "8765"))
 
     CLOUD_ROUTING_THRESHOLD: int = 200
-    MAX_CONVERSATION_HISTORY: int = 20
+    MAX_CONVERSATION_HISTORY: int = 30
     STREAM_TO_UI: bool = os.getenv("STREAM_TO_UI", "true").lower() == "true"
     ASSISTANT_NAME: str = os.getenv("ASSISTANT_NAME", "Hilda")
+
+    # ── New: Intelligence & Memory ───────────────────────────────────────────
+    USE_INTENT_CLASSIFIER: bool = os.getenv("USE_INTENT_CLASSIFIER", "true").lower() == "true"
+    USE_CONTEXT_AWARENESS: bool = os.getenv("USE_CONTEXT_AWARENESS", "true").lower() == "true"
+    USE_SEMANTIC_MEMORY: bool = os.getenv("USE_SEMANTIC_MEMORY", "true").lower() == "true"
+    USE_FACT_EXTRACTION: bool = os.getenv("USE_FACT_EXTRACTION", "true").lower() == "true"
+    USE_PROACTIVE_SUGGESTIONS: bool = os.getenv("USE_PROACTIVE_SUGGESTIONS", "true").lower() == "true"
+    MEMORY_SEARCH_TOP_K: int = int(os.getenv("MEMORY_SEARCH_TOP_K", "5"))
+    CONVERSATION_RESUME_MINUTES: int = int(os.getenv("CONVERSATION_RESUME_MINUTES", "30"))
+
+    # ── New: Email Integration ───────────────────────────────────────────────
+    EMAIL_IMAP_HOST: str = os.getenv("EMAIL_IMAP_HOST", "imap.gmail.com")
+    EMAIL_IMAP_PORT: int = int(os.getenv("EMAIL_IMAP_PORT", "993"))
+    EMAIL_SMTP_HOST: str = os.getenv("EMAIL_SMTP_HOST", "smtp.gmail.com")
+    EMAIL_SMTP_PORT: int = int(os.getenv("EMAIL_SMTP_PORT", "587"))
+    EMAIL_ADDRESS: str = os.getenv("EMAIL_ADDRESS", "")
+    EMAIL_PASSWORD: str = os.getenv("EMAIL_PASSWORD", "")
+
+    # ── New: Web Intelligence ────────────────────────────────────────────────
+    USE_WEB_SEARCH: bool = os.getenv("USE_WEB_SEARCH", "true").lower() == "true"
+
+    # ── Porcupine (optional — kept for backward compat) ──────────────────────
+    PORCUPINE_ACCESS_KEY: str = os.getenv("PORCUPINE_ACCESS_KEY", "")
+    PORCUPINE_KEYWORD: str = os.getenv("PORCUPINE_KEYWORD", "computer")
+    PORCUPINE_KEYWORD_PATH: str = os.getenv("PORCUPINE_KEYWORD_PATH", "")
 
 
 settings = Settings()

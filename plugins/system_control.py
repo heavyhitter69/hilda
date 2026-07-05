@@ -6,7 +6,6 @@ This file remains the public interface that planner.py and fast_lane.py call.
 """
 from __future__ import annotations
 
-import asyncio
 from typing import Optional
 
 from adapters import adapter

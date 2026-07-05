@@ -1,7 +1,7 @@
 """
 plugins/mouse_keyboard.py — Mouse and keyboard automation via PyAutoGUI.
 """
-import time
+
 import pyautogui
 from core.logger import get_logger
 
@@ -84,7 +84,7 @@ def scroll(clicks: int, x: int = None, y: int = None) -> str:
     return f"Scrolled {direction}."
 
 
-def screenshot_region(left: int, top: int, width: int, height: int) -> "PIL.Image.Image":
+def screenshot_region(left: int, top: int, width: int, height: int):
     """Capture a screen region and return a PIL Image."""
     import mss
     from PIL import Image as PILImage

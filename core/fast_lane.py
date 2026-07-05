@@ -1,59 +1,20 @@
 """
 core/fast_lane.py — Deterministic desktop command routing (no LLM).
 
-Maps common phrases directly to the same tool implementations used by the
-LangChain planner so simple actions avoid cloud/local LLM latency.
+Maps common phrases directly to the underlying tool implementations
+so simple actions avoid cloud/local LLM latency.
 """
 from __future__ import annotations
 
 import re
 import urllib.parse
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Optional
 
 from config.settings import settings
 from core.logger import get_logger
 
 log = get_logger(__name__)
-
-_tool_open_app: Optional[Callable[..., str]] = None
-_tool_close_app: Optional[Callable[..., str]] = None
-_tool_search_youtube: Optional[Callable[..., str]] = None
-_tool_type_text: Optional[Callable[..., str]] = None
-_tool_paste_text: Optional[Callable[..., str]] = None
-_tool_file_search: Optional[Callable[..., str]] = None
-_tool_open_path: Optional[Callable[..., str]] = None
-_tool_search_and_open_file: Optional[Callable[..., str]] = None
-_tool_system_action: Optional[Callable[..., str]] = None
-_tool_run_powershell: Optional[Callable[..., str]] = None
-_tool_dictate_and_enter: Optional[Callable[..., str]] = None
-_tool_scroll: Optional[Callable[..., str]] = None
-_tool_quick_pc_snapshot: Optional[Callable[[], str]] = None
-
-
-def _bind_tools() -> None:
-    global _tool_open_app, _tool_close_app, _tool_search_youtube
-    global _tool_type_text, _tool_paste_text, _tool_file_search, _tool_open_path
-    global _tool_search_and_open_file, _tool_system_action, _tool_run_powershell
-    global _tool_dictate_and_enter, _tool_scroll, _tool_quick_pc_snapshot
-    if _tool_open_app is not None:
-        return
-    from core import planner as p
-    from plugins.diagnostics import quick_pc_snapshot
-
-    _tool_open_app = p.tool_open_app
-    _tool_close_app = p.tool_close_app
-    _tool_search_youtube = p.tool_search_youtube
-    _tool_type_text = p.tool_type_text
-    _tool_paste_text = p.tool_paste_text
-    _tool_file_search = p.tool_file_search
-    _tool_open_path = p.tool_open_path
-    _tool_search_and_open_file = p.tool_search_and_open_file
-    _tool_system_action = p.tool_system_action
-    _tool_run_powershell = p.tool_run_powershell
-    _tool_dictate_and_enter = p.tool_dictate_and_enter
-    _tool_scroll = p.tool_scroll
-    _tool_quick_pc_snapshot = quick_pc_snapshot
 
 
 def _strip_assistant_prefix(text: str) -> str:
@@ -154,75 +115,44 @@ def try_dispatch(user_text: str) -> Optional[str]:
     If the utterance is a simple desktop command, execute and return a result str.
     Return None to let the LangChain planner or LLM handle it.
     """
-    if not settings.USE_FAST_LANE:
+    if not getattr(settings, "USE_FAST_LANE", True):
         return None
 
-    _bind_tools()
-    fn: Any
     text = _strip_assistant_prefix(user_text)
     if not text.strip():
         return None
 
     low = text.lower()
 
-    # ── Dictation ──────────────────────────────────────────────────────────
-    if any(
-        p in low
-        for p in (
-            "dictate",
-            "voice type",
-            "type what i say",
-            "write what i say",
-            "start dictation",
-            "dictation mode",
-        )
-    ):
-        log.info("Fast lane: dictation")
-        return _tool_dictate_and_enter("paste")
-
     # ── PC diagnostics ─────────────────────────────────────────────────────
     if any(
         p in low
         for p in (
-            "diagnose",
-            "diagnostic",
-            "health check",
-            "pc health",
-            "check my pc",
-            "system report",
-            "disk space",
-            "memory usage",
-            "cpu usage",
-            "computer slow",
-            "what's wrong with my pc",
-            "whats wrong with my pc",
+            "diagnose", "diagnostic", "health check", "pc health",
+            "check my pc", "system report", "disk space", "memory usage",
+            "cpu usage", "computer slow", "what's wrong with my pc",
         )
     ):
+        from plugins.diagnostics import quick_pc_snapshot
         log.info("Fast lane: PC snapshot")
-        return _tool_quick_pc_snapshot()
+        return quick_pc_snapshot()
 
     # ── System actions ─────────────────────────────────────────────────────
-    if re.match(
-        r"^\s*lock(?:\s+(?:my\s+)?(?:pc|computer|screen|workstation|it))?\s*[.!?]?\s*$",
-        low,
-    ):
-        return _tool_system_action("lock")
+    if re.match(r"^\s*lock(?:\s+(?:my\s+)?(?:pc|computer|screen|workstation|it))?\s*[.!?]?\s*$", low):
+        from plugins.system_control import system_action
+        return system_action("lock")
     if re.search(r"\bcancel\b\s+(?:the\s+)?(?:shutdown|restart)", low):
-        return _tool_system_action("cancel")
+        from plugins.system_control import system_action
+        return system_action("cancel")
     if "sleep" in low or "suspend" in low:
-        return _tool_system_action("sleep")
+        from plugins.system_control import system_action
+        return system_action("sleep")
     if "shutdown" in low or "turn off computer" in low or "power off" in low:
-        return _tool_system_action("shutdown")
+        from plugins.system_control import system_action
+        return system_action("shutdown")
     if "restart" in low or "reboot" in low:
-        return _tool_system_action("restart")
-
-    # ── PowerShell one-liner ────────────────────────────────────────────────
-    if low.startswith("run ") or (low.startswith("powershell") and len(low) > 12):
-        cmd = re.sub(r"^\s*run\s+", "", text, flags=re.I).strip()
-        cmd = re.sub(r"^\s*(in\s+)?powershell[,:]?\s*", "", cmd, flags=re.I).strip()
-        if cmd:
-            log.info("Fast lane: powershell")
-            return _tool_run_powershell(cmd)
+        from plugins.system_control import system_action
+        return system_action("restart")
 
     # ── YouTube ─────────────────────────────────────────────────────────────
     yt_match = re.search(
@@ -233,8 +163,9 @@ def try_dispatch(user_text: str) -> Optional[str]:
         q = next((g for g in yt_match.groups() if g), None)
         if q:
             topic = _clean_target(q)
+            from plugins.browser_control import search_youtube_sync
             log.info("Fast lane: YouTube")
-            return _tool_search_youtube(topic)
+            return search_youtube_sync(topic)
 
     # ── Google search ───────────────────────────────────────────────────────
     g_match = re.search(
@@ -245,26 +176,23 @@ def try_dispatch(user_text: str) -> Optional[str]:
         q = next((g for g in g_match.groups() if g), None)
         if q:
             query = _clean_target(q)
-            from plugins.browser_control import open_url_default_browser
-
+            from plugins.browser_control import open_url_sync
             url = "https://www.google.com/search?q=" + urllib.parse.quote(query)
             log.info("Fast lane: Google")
-            return open_url_default_browser(url)
+            return open_url_sync(url)
 
     # ── Open URL / navigate ─────────────────────────────────────────────────
     nav_match = re.search(
         r"\b(navigate|go)\s+to\s+(.+)$|\bopen\s+(?:the\s+)?(?:website|site|link)\s+(.+)$",
-        text,
-        re.I,
+        text, re.I,
     )
     if nav_match:
         target = next((g for g in nav_match.groups() if g), None)
         if target:
             frag = _clean_target(target)
             if _looks_like_url(frag):
-                from plugins.browser_control import open_url_default_browser
-
-                return open_url_default_browser(frag)
+                from plugins.browser_control import open_url_sync
+                return open_url_sync(frag)
 
     # ── Find files ───────────────────────────────────────────────────────────
     find_match = re.search(
@@ -274,14 +202,16 @@ def try_dispatch(user_text: str) -> Optional[str]:
     if find_match:
         q = _clean_target(find_match.group(2))
         if len(q) > 1:
+            from plugins.file_search import search_files
             log.info("Fast lane: file search")
-            return _tool_file_search(q, str(Path.home()))
+            return search_files(q, str(Path.home()))
 
     open_file_match = re.search(r"\b(open|launch)\s+(?:my\s+)?(?:the\s+)?file\s+(.+)$", low)
     if open_file_match:
         q = _clean_target(open_file_match.group(2))
         if q:
-            return _tool_search_and_open_file(q, str(Path.home()))
+            from plugins.file_search import search_and_open
+            return search_and_open(q, str(Path.home()))
 
     # ── Close app ───────────────────────────────────────────────────────────
     close_match = re.search(r"\b(close|quit|exit|kill)\s+(?:the\s+)?(.+)$", low)
@@ -289,24 +219,28 @@ def try_dispatch(user_text: str) -> Optional[str]:
         target = _clean_target(close_match.group(2))
         target = re.sub(r"\b(app|application|program)\b", "", target, flags=re.I).strip()
         if target:
+            from plugins.app_control import close_application
             log.info("Fast lane: close")
-            return _tool_close_app(target)
+            return close_application(target)
 
     # ── Type / paste ─────────────────────────────────────────────────────────
     paste_match = re.search(r"\bpaste\b\s*[:\s]+\s*(.+)$", text, re.I | re.DOTALL)
     if paste_match:
         body = paste_match.group(1).strip()
         if body:
-            return _tool_paste_text(body)
+            from plugins.mouse_keyboard import paste_text
+            return paste_text(body)
 
     type_match = re.search(r"(?im)^\s*type\s+(?!of\s)(\S.*)$", text)
     if type_match:
         typed = type_match.group(1).strip()
         if typed:
             if len(typed) > 160 or "\n" in typed:
-                return _tool_paste_text(typed)
+                from plugins.mouse_keyboard import paste_text
+                return paste_text(typed)
+            from plugins.mouse_keyboard import type_text
             log.info("Fast lane: keyboard type")
-            return _tool_type_text(typed)
+            return type_text(typed)
 
     # ── Scroll ───────────────────────────────────────────────────────────────
     scroll_m = re.match(r"^\s*scroll\s+(up|down)(?:\s+(\d+))?\s*$", low)
@@ -314,7 +248,8 @@ def try_dispatch(user_text: str) -> Optional[str]:
         direction = scroll_m.group(1)
         n = int(scroll_m.group(2)) if scroll_m.group(2) else 3
         clicks = n if direction == "up" else -n
-        return _tool_scroll(clicks)
+        from plugins.mouse_keyboard import scroll
+        return scroll(clicks)
 
     # ── Open / launch / start ───────────────────────────────────────────────
     launch_match = re.match(
@@ -330,54 +265,45 @@ def try_dispatch(user_text: str) -> Optional[str]:
             inner = folder_m.group(1).strip()
             kf = _known_folder_path(inner)
             if kf:
-                return _tool_open_path(str(kf))
+                from plugins.file_search import open_file
+                return open_file(str(kf))
             resolved = _resolve_path(inner)
             if resolved:
-                return _tool_open_path(resolved)
+                from plugins.file_search import open_file
+                return open_file(resolved)
 
         resolved = _resolve_path(raw_target)
         if resolved:
+            from plugins.file_search import open_file
             log.info("Fast lane: resolved path")
-            return _tool_open_path(resolved)
+            return open_file(resolved)
 
         if _looks_like_path(raw_target):
             pth = Path(raw_target).expanduser()
             try:
                 if pth.exists():
-                    return _tool_open_path(str(pth.resolve()))
+                    from plugins.file_search import open_file
+                    return open_file(str(pth.resolve()))
             except OSError:
                 pass
 
         if _looks_like_url(raw_target):
-            from plugins.browser_control import open_url_default_browser
-
-            return open_url_default_browser(raw_target)
+            from plugins.browser_control import open_url_sync
+            return open_url_sync(raw_target)
 
         kf = _known_folder_path(tgt_norm)
         if kf:
-            return _tool_open_path(str(kf))
+            from plugins.file_search import open_file
+            return open_file(str(kf))
 
         appish = _clean_target(raw_target)
-        if any(
-            ext in appish.lower()
-            for ext in (
-                ".pdf",
-                ".doc",
-                ".docx",
-                ".txt",
-                ".xlsx",
-                ".ppt",
-                ".png",
-                ".jpg",
-                ".jpeg",
-                ".csv",
-                ".zip",
-            )
-        ):
-            return _tool_search_and_open_file(appish, str(Path.home()))
+        if any(ext in appish.lower() for ext in (".pdf", ".doc", ".docx", ".txt", ".xlsx", ".ppt", ".png", ".jpg", ".jpeg", ".csv", ".zip")):
+            from plugins.file_search import search_and_open
+            return search_and_open(appish, str(Path.home()))
 
+        from plugins.app_control import open_application
         log.info("Fast lane: open app %s", appish[:40])
-        return _tool_open_app(appish)
+        return open_application(appish)
 
     # ── Hardware Toggles ───────────────────────────────────────────────────
     hw_match = re.search(r"\b(turn\s+)?(on|off|enable|disable)\s+(wifi|wi-fi|bluetooth|airplane\s+mode|hotspot)\b", low)
@@ -385,91 +311,89 @@ def try_dispatch(user_text: str) -> Optional[str]:
         state = hw_match.group(2) in ("on", "enable")
         target = hw_match.group(3).replace("wi-fi", "wifi").replace("airplane mode", "airplane")
         log.info("Fast lane: toggle %s to %s", target, state)
-        from core.planner import tool_toggle_wifi, tool_toggle_bluetooth, tool_toggle_airplane, tool_toggle_hotspot
-        if target == "wifi": return tool_toggle_wifi(state)
-        if target == "bluetooth": return tool_toggle_bluetooth(state)
-        if target == "airplane": return tool_toggle_airplane(state)
-        if target == "hotspot": return tool_toggle_hotspot(state)
+        from plugins.system_control import control_wifi, control_bluetooth
+        if target == "wifi": return control_wifi(state)
+        if target == "bluetooth": return control_bluetooth(state)
 
     # ── Volume & Media ─────────────────────────────────────────────────────
     if "volume up" in low or "increase volume" in low:
-        from core.planner import tool_set_volume
-        return tool_set_volume("up")
+        from plugins.system_control import set_volume
+        return set_volume("up")
     if "volume down" in low or "decrease volume" in low:
-        from core.planner import tool_set_volume
-        return tool_set_volume("down")
+        from plugins.system_control import set_volume
+        return set_volume("down")
     if "unmute" in low:
-        from core.planner import tool_set_volume
-        return tool_set_volume("unmute")
+        from plugins.system_control import set_volume
+        return set_volume("unmute")
     if "mute" in low:
-        from core.planner import tool_set_volume
-        return tool_set_volume("mute")
+        from plugins.system_control import set_volume
+        return set_volume("mute")
     
     media_match = re.search(r"\b(play|pause|next|previous|prev)\s+(music|song|video|track|media)?\b", low)
     if media_match:
         act = media_match.group(1).replace("previous", "prev")
-        from core.planner import tool_media_control
-        return tool_media_control(act)
+        from plugins.system_control import media_control
+        return media_control(act)
 
     # ── Brightness ─────────────────────────────────────────────────────────
     bright_match = re.search(r"\b(set|change|put)\s+brightness\s+(to\s+)?(\d+)\b", low)
     if bright_match:
         lvl = int(bright_match.group(3))
-        from core.planner import tool_set_brightness
-        return tool_set_brightness(lvl)
+        from plugins.system_control import set_brightness
+        return set_brightness(lvl)
 
     # ── Screenshot ─────────────────────────────────────────────────────────
     if any(p in low for p in ("screenshot", "take a snap", "capture screen")):
-        from core.planner import tool_screenshot
-        return tool_screenshot()
+        from plugins.system_control import take_screenshot
+        return take_screenshot()
 
     # ── System Shortcuts ───────────────────────────────────────────────────
     if "project" in low or "projection" in low:
-        from core.planner import tool_trigger_shortcut
-        return tool_trigger_shortcut("project")
+        from plugins.system_control import trigger_shortcut
+        return trigger_shortcut("project")
     if "cast" in low or "screen mirror" in low:
-        from core.planner import tool_trigger_shortcut
-        return tool_trigger_shortcut("cast")
+        from plugins.system_control import trigger_shortcut
+        return trigger_shortcut("cast")
     if "task manager" in low or "taskmgr" in low:
-        from core.planner import tool_trigger_shortcut
-        return tool_trigger_shortcut("taskmgr")
+        from plugins.system_control import trigger_shortcut
+        return trigger_shortcut("taskmgr")
 
     # ── Battery ────────────────────────────────────────────────────────────
     if any(p in low for p in ("battery", "power level", "charging")):
-        from core.planner import tool_battery_status
-        return tool_battery_status()
+        from plugins.system_control import get_battery_status
+        return get_battery_status()
 
     # ── Time & Date ────────────────────────────────────────────────────────
     if any(p in low for p in ("what time is it", "current time", "what's the time")):
-        from core.planner import tool_get_time
-        return tool_get_time()
+        from plugins.info_control import get_current_time
+        return get_current_time()
     if any(p in low for p in ("what's the date", "what is the date", "today's date", "todays date")):
-        from core.planner import tool_get_date
-        return tool_get_date()
+        from plugins.info_control import get_current_date
+        return get_current_date()
 
     # ── Reminders & Timers (Basic) ─────────────────────────────────────────
     rem_match = re.search(r"remind\s+me\s+to\s+(.+)\s+in\s+(\d+)\s+minutes?", low)
     if rem_match:
         msg = rem_match.group(1)
         mins = int(rem_match.group(2))
-        from core.planner import tool_set_reminder
-        return tool_set_reminder(msg, minutes_from_now=mins)
+        from plugins.reminder_control import add_reminder
+        return add_reminder(msg, str(mins))
 
     timer_match = re.search(r"set\s+(?:a\s+)?timer\s+for\s+(\d+)\s+(seconds?|minutes?)", low)
     if timer_match:
         val = int(timer_match.group(1))
         unit = timer_match.group(2)
         secs = val * 60 if unit.startswith("min") else val
-        from core.planner import tool_set_timer
-        return tool_set_timer(secs, f"Timer for {val} {unit}")
+        from plugins.timer_control import set_timer
+        return set_timer(secs, f"Timer for {val} {unit}")
 
     # ── Miscellaneous ──────────────────────────────────────────────────────
     if any(p in low for p in ("empty", "clear")) and any(p in low for p in ("trash", "recycle bin", "bin")):
-        from core.planner import tool_empty_trash
-        return tool_empty_trash()
+        from plugins.system_control import empty_recycle_bin
+        return empty_recycle_bin()
 
     if any(p in low for p in ("system info", "pc info", "computer info", "specs", "specifications")):
-        from core.planner import tool_system_info
-        return tool_system_info()
+        from plugins.system_control import get_detailed_system_info
+        return get_detailed_system_info()
 
     return None

@@ -3,8 +3,8 @@ memory/memory_manager.py — SQLite-backed action log and pattern store.
 """
 import sqlite3
 from datetime import datetime
-from pathlib import Path
-from typing import Optional
+
+
 
 from config.settings import settings
 from core.logger import get_logger

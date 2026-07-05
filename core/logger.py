@@ -5,7 +5,7 @@ Writes coloured output to stdout and a rotating file at logs/hilda.log.
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
-from pathlib import Path
+
 
 import colorlog
 

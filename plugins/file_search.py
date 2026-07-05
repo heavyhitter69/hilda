@@ -43,7 +43,6 @@ def search_files(query: str, path: str = "C:\\Users") -> list[str]:
 
 def open_file(path: str) -> str:
     """Open a file with its default application."""
-    import subprocess
     try:
         os.startfile(path)
         log.info("Opened file: %s", path)
