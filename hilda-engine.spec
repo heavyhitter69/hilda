@@ -14,7 +14,11 @@ hidden_imports += collect_submodules('plugins')
 hidden_imports += [
     'whisper', 'sounddevice', 'numpy', 'websockets', 'websockets.legacy', 
     'websockets.legacy.server', 'colorlog', 'webrtcvad', 'playwright', 
-    'pyautogui', 'mss', 'psutil', 'screen_brightness_control'
+    'pyautogui', 'mss', 'psutil', 'screen_brightness_control',
+    'core.agent', 'core.context_awareness', 'core.fast_lane',
+    'core.intent_classifier', 'core.logger', 'core.personality',
+    'core.planner', 'core.proactive_engine', 'core.security',
+    'core.websocket_server'
 ]
 
 # Collect data files (models, configs, templates)
